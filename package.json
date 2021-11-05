@@ -1,0 +1,21 @@
+{
+  "name": "create-react-fast",
+  "version": "1.0.0",
+  "description": "",
+  "bin": {
+    "crf": "./bin/index.js"
+  },
+  "scripts": {},
+  "engines": {
+    "node": ">= 12.0.0",
+    "npm": "~6.14.10"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^0.24.0",
+    "chalk": "^4.1.2",
+    "commander": "^8.3.0",
+    "semver": "^7.3.5"
+  }
+}
