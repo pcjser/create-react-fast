@@ -12,6 +12,7 @@ If you have questions or need help, please ask in [GitHub Discussions](https://g
 ## Quick Overview
 
 ```sh
+npm install create-react-fast -g
 crf create my-app
 cd my-app
 npm start
@@ -33,10 +34,27 @@ Create a project, and you’re good to go.
 
 To create a new app, you may choose one of the following methods:
 
+### install
+
+```sh
+npm install create-react-fast -g
+```
+
 ### crf
 
 ```sh
-crf create my-app
+crf create my-app [options]
+```
+
+###### options(待开发)
+- easy: 系统集成常用库和工具如react-router、antd、sass等
+- admin: 快速构建后台管理系统
+
+### other
+
+```sh
+crf -V  // 查看当前版本
+crf -h  // 查看帮助信息
 ```
 
 It will create a directory called `my-app` inside the current folder.<br>
