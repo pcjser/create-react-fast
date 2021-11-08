@@ -56,7 +56,7 @@ program
 
     console.log(`Creating a new React app in ${process.cwd()}\\${name}.`);
     console.log('\nInstalling packages. This might take a couple of minutes.');
-    console.log('\nInstalling react, react-dom, and react-scripts with crf-template...');
+    console.log('Installing react, react-dom, and react-scripts with crf-template...\n');
 
     const PATH = `./${name}`;
 
@@ -86,27 +86,31 @@ program
       });
 
       // 执行命令行
-      exec(`cd ${name} && npm i`, (error, stdout, stderr) => {
+      exec(`cd ${name} && git init`, (error, stdout, stderr) => {
         if (error) return console.log("error:" + error);
         // console.log("stdout:" + stdout);
-        console.log(stderr); // 命令行执行信息
+        console.log('Initialized a git repository.');
+        console.log('\nInstalling template dependencies using npm...');
 
-        console.log(`Success! Created ${name} at ${process.cwd()}\\${name}`);
-        console.log('Inside that directory, you can run several commands:');
-        console.log('\n  npm start');
-        console.log('    Starts the development server.');
-        console.log('\n  npm run build');
-        console.log('    Bundles the app into static files for production.');
-        console.log('\n  npm run test');
-        console.log('    Starts the test runner.');
-        console.log('\n  npm run eject');
-        console.log('     Removes this tool and copies build dependencies, configuration files');
-        console.log('     and scripts into the app directory. If you do this, you can’t go back!');
-        console.log('\nWe suggest that you begin by typing');
-        console.log(`\n  cd ${name}`);
-        console.log(`  npm start`);
-        console.log('\nHappy hacking!');
-        console.log('\n');
+        exec(`cd ${name} && npm i`, (error, stdout, stderr) => {
+          console.log(stderr); // 命令行执行信息
+          console.log('\nCreated git commit.');
+          console.log(`\nSuccess! Created ${name} at ${process.cwd()}\\${name}`);
+          console.log('Inside that directory, you can run several commands:');
+          console.log('\n  npm start');
+          console.log('    Starts the development server.');
+          console.log('\n  npm run build');
+          console.log('    Bundles the app into static files for production.');
+          console.log('\n  npm run test');
+          console.log('    Starts the test runner.');
+          console.log('\n  npm run eject');
+          console.log('     Removes this tool and copies build dependencies, configuration files');
+          console.log('     and scripts into the app directory. If you do this, you can’t go back!');
+          console.log('\nWe suggest that you begin by typing');
+          console.log(`\n  cd ${name}`);
+          console.log(`  npm start`);
+          console.log('\nHappy hacking!');
+        })
       });
     });
   });
