@@ -5,8 +5,9 @@ const semver = require("semver");
 // const chalk = require("chalk");
 const { exec } = require('child_process');
 const { program } = require('commander');
+const PKGJSON = require("./package.json");
 
-let registry = '';
+let management = 'npm';
 
 // 检验node版本
 // const checkNodeVersion = () => {
@@ -37,52 +38,79 @@ let registry = '';
 // chekPkgVersion();
 
 const copyFileSync = (from, to) => {
-  from = path.join(__dirname, 'template', from);
-  fs.writeFileSync(to, fs.readFileSync(from, 'utf-8'));
+  const readable = fs.createReadStream(from);
+  const writable = fs.createWriteStream(to);
+  readable.pipe(writable);
 }
 
-const copyTemplateEmpty = name => {
-  const PATH = `./${name}`;
-
-  return new Promise(resolve => {
-    fs.mkdir(name, () => {
-      copyFileSync("package.json", PATH + '/package.json');
-      copyFileSync(".gitignore", PATH + '/.gitignore');
-      copyFileSync("README.md", PATH + '/README.md');
-
-      fs.mkdir(PATH + '/public', () => {
-        copyFileSync("/public/favicon.ico", PATH + '/public/favicon.ico');
-        copyFileSync("/public/index.html", PATH + '/public/index.html');
-        copyFileSync("/public/logo192.png", PATH + '/public/logo192.png');
-        copyFileSync("/public/logo512.png", PATH + '/public/logo512.png');
-        copyFileSync("/public/manifest.json", PATH + '/public/manifest.json');
-        copyFileSync("/public/robots.txt", PATH + '/public/robots.txt');
-      });
-
-      fs.mkdir(PATH + '/src', () => {
-        copyFileSync("/src/App.js", PATH + '/src/App.js');
-        copyFileSync("/src/App.css", PATH + '/src/App.css');
-        copyFileSync("/src/App.test.js", PATH + '/src/App.test.js');
-        copyFileSync("/src/index.css", PATH + '/src/index.css');
-        copyFileSync("/src/index.js", PATH + '/src/index.js');
-        copyFileSync("/src/logo.svg", PATH + '/src/logo.svg');
-        copyFileSync("/src/reportWebVitals.js", PATH + '/src/reportWebVitals.js');
-        copyFileSync("/src/setupTests.js", PATH + '/src/setupTests.js');
-      });
-
-      resolve();
-    });
+const copyDirectorySync = (src, dst) => {
+  let paths = fs.readdirSync(src);
+  paths.forEach(path => {
+    const _src = `${src}\\${path}`;
+    const _dst = `${dst}\\${path}`;
+    fs.stat(_src, (err, stats) => {
+      if (err) throw err;
+      if (stats.isFile()) {
+        copyFileSync(_src, _dst);
+      } else if (stats.isDirectory()) {
+        fs.access(_dst, fs.constants.F_OK, err => {
+          if (err) {
+            fs.mkdirSync(_dst);
+            copyDirectorySync(_src, _dst);
+          } else {
+            copyDirectorySync(_src, _dst);
+          }
+        })
+      }
+    })
   })
 }
 
-const copyTemplateBase = name => {
-  console.log('\nbase模式待开发...');
-  process.exit();
-}
+const createProject = (name, destination, options) => {
+  console.log(`\n在${process.cwd()}\\${name}中创建一个新项目，文件创建中，请稍后...`);
 
-const copyTemplateAdmin = name => {
-  console.log('\nadmin模式待开发...');
-  process.exit();
+  fs.mkdirSync(name);
+
+  if (destination === 'empty') copyDirectorySync(path.join(__dirname, 'template-empty'), `${name}`);
+  if (destination === 'base') copyDirectorySync(path.join(__dirname, 'template-base'), `${name}`);
+  // if (destination === 'admin') copyDirectorySync(path.join(__dirname, 'template-admin'), `${name}`);
+
+  console.log('\n文件创建完成，初始化git仓库中...');
+
+  exec(`cd ${name} && git init`, error => {
+    if (error) return console.log("error:" + error);
+
+    if (options.cnpm) console.log(`\ngit仓库初始化完成，使用cnpm安装依赖中，请稍后...`);
+    else console.log(`\ngit仓库初始化完成，使用npm安装依赖中，请稍后...(如长时间无法安装完成，请尝试使用cnpm)`);
+
+    exec(`cd ${name} && ${management} i`, error => {
+      if (error) return console.log("error:" + error);
+
+      console.log(`依赖安装完成，仓库初次提交中...`);
+
+      exec(`cd ${name} && git add . && git commit -m "Initialize project using Create React Fast"`, error => {
+        if (error) return console.log("error:" + error);
+
+        console.log('项目初次提交完成');
+        console.log(`\n项目${name}创建完成，项目路径：${process.cwd()}\\${name}`);
+        console.log('\n进入文件夹内部，你可以执行以下命令：');
+        console.log('\n  npm start');
+        console.log('    启动开发服务器.');
+        console.log('\n  npm run build');
+        console.log('    将项目打包成生产环境的静态文件.');
+        console.log('\n  npm run test');
+        console.log('    启动项目测试.');
+        if (destination === 'empty') {
+          console.log('\n  npm run eject');
+          console.log('    释放项目配置文件和所有的环境依赖，此过程不可逆，请谨慎操作！！！');
+        }
+        console.log('\n建议你从以下命令开始：');
+        console.log(`\n  cd ${name}`);
+        console.log(`  npm start`);
+        console.log('\n开始你的码字之旅吧~');
+      })
+    })
+  });
 }
 
 program
@@ -92,56 +120,40 @@ program
   .argument('[app-name]', '项目名称', 'demo-app')     // 增加参数
   .argument('[destination]', '选择模板模式可选值为：empty(空)，base(基本)，admin(管理)', 'empty')     // 增加参数
   .description('基于create-react-fast创建一个项目')
-  .action(async (name, destination, options) => {
+  .action((name, destination, options) => {
 
-    if (options.cnpm) registry = ' --registry=https://registry.npmmirror.com';
+    if (!['empty', 'base'].includes(destination)) {
+      console.log(`\n不支持的模板形式${destination}，请尝试使用empty或者base`);
+      process.exit();
+    }
 
-    console.log(`\n在${process.cwd()}\\${name}中创建一个新项目，文件创建中，请稍后...`);
+    if (options.cnpm) {
 
-    if (destination === 'empty') await copyTemplateEmpty(name);
-    if (destination === 'base') await copyTemplateBase(name);
-    if (destination === 'admin') await copyTemplateAdmin(name);
+      management = 'cnpm';
 
-    console.log('\n文件创建完成，初始化git仓库中...');
+      exec('cnpm -v', (error, stdout) => {
+        if (error) {
+          console.log('\n检测到系统未装cnpm，正在帮您全局安装cnpm中...');
 
-    exec(`cd ${name} && git init`, error => {
-      if (error) return console.log("error:" + error);
+          exec('npm i cnpm -g --registry=https://registry.npmmirror.com', error => {
+            if (error) throw error;
 
-      if (options.cnpm) console.log(`\ngit仓库初始化完成，使用cnpm安装依赖中，请稍后...`);
-      else console.log(`\ngit仓库初始化完成，使用npm安装依赖中，请稍后...(如长时间无法安装完成，请尝试使用cnpm)`);
+            console.log('\ncnpm安装完成');
+            createProject(name, destination, options);
+          })
+        } else {
+          try {
+            const version = stdout.match(/cnpm(@|.\w+){3}/ig)[0].split('@')[1];
+            console.log(`\n检测到系统当前cnpm版本为${version}`);
 
-      exec(`cd ${name} && npm i${registry}`, error => {
-        if (error) return console.log("error:" + error);
-
-        console.log(`依赖安装完成，仓库初次提交中...`);
-
-        exec(`cd ${name} && git add . && git commit -m "Initialize project using Create React Fast"`, error => {
-          if (error) return console.log("error:" + error);
-
-          console.log('项目初次提交完成');
-          console.log(`\n项目${name}创建完成，项目路径：${process.cwd()}\\${name}`);
-          console.log('\n进入文件夹内部，你可以执行以下命令：');
-          console.log('\n  npm start');
-          console.log('    启动开发服务器.');
-          console.log('\n  npm run build');
-          console.log('    将项目打包成生产环境的静态文件.');
-          console.log('\n  npm run test');
-          console.log('    启动项目测试.');
-          if (destination === 'empty') {
-            console.log('\n  npm run eject');
-            console.log('    释放项目配置文件和所有的环境依赖，此过程不可逆，请谨慎操作！！！');
-          }
-          console.log('\n建议你从以下命令开始：');
-          console.log(`\n  cd ${name}`);
-          console.log(`  npm start`);
-          console.log('\n开始你的码字之旅吧~');
-
-        })
+            createProject(name, destination, options);
+          } catch (err) { console.log(err); }
+        }
       })
-    });
+    }
   });
 
 program
-  .version(`create-react-fast@${require("./package.json").version}`);
+  .version(`create-react-fast@${PKGJSON.version}`);
 
 program.parse(process.argv);
