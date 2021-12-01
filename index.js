@@ -73,13 +73,51 @@ const copyDirectorySync = (src, dst) => {
   });
 };
 
-const createProject = (name, destination, options) => {
+const createDirectory = (name, destination, options) => {
   console.log(
     `\n在${process.cwd()}\\${name}中创建一个新项目，文件创建中，请稍后...`
   );
 
   try {
     fs.mkdirSync(name);
+    fs.writeFileSync(
+      `${name}/.gitignore`,
+      `# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+  
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+
+# production
+/build
+
+# misc
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+  `,
+      "utf8"
+    );
+
+    if (destination === "empty")
+      copyDirectorySync(path.join(__dirname, "/bin/template-empty"), `${name}`);
+    if (destination === "base")
+      copyDirectorySync(path.join(__dirname, "/bin/template-base"), `${name}`);
+    // if (destination === 'admin') copyDirectorySync(path.join(__dirname, 'template-admin'), `${name}`);
+
+    console.log("\n文件创建完成，初始化git仓库中...");
+
+    coreCommand(name, destination, options);
   } catch (e) {
     if (e.code === "EEXIST")
       console.log(
@@ -91,27 +129,23 @@ const createProject = (name, destination, options) => {
       console.log(chalk.red(`\n文件夹系统异常，请稍后再试或联系QQ：201688080`));
     exit();
   }
+};
 
-  if (destination === "empty")
-    copyDirectorySync(path.join(__dirname, "/bin/template-empty"), `${name}`);
-  if (destination === "base")
-    copyDirectorySync(path.join(__dirname, "/bin/template-base"), `${name}`);
-  // if (destination === 'admin') copyDirectorySync(path.join(__dirname, 'template-admin'), `${name}`);
-
-  console.log("\n文件创建完成，初始化git仓库中...");
-
+const coreCommand = (name, destination, options) => {
   exec(`cd ${name} && git init`, (error) => {
     if (error) return console.log(chalk.red(error));
 
     if (options.cnpm)
-      console.log(`\ngit仓库初始化完成，使用cnpm安装依赖中，请稍后...`);
+      console.log(`\ngit仓库初始化完成，使用cnpm安装依赖中，请稍后...\n`);
     else
       console.log(
         `\ngit仓库初始化完成，使用npm安装依赖中，请稍后...(如长时间无法安装完成，请尝试使用-c参数指定cnpm进行包安装)`
       );
 
-    exec(`cd ${name} && ${options.cnpm ? "cnpm" : "npm"} i`, (error) => {
+    exec(`cd ${name} && ${options.cnpm ? "cnpm" : "npm"} i`, (error, stdout) => {
       if (error) return console.log(chalk.red(error));
+
+      console.log(stdout);
 
       console.log(`依赖安装完成，仓库初次提交中...`);
 
@@ -120,7 +154,7 @@ const createProject = (name, destination, options) => {
         (error) => {
           if (error) return console.log(chalk.red(error));
 
-          console.log("项目初次提交完成");
+          console.log("\n项目初次提交完成");
           console.log(
             `\n项目${name}创建完成，项目路径：${process.cwd()}\\${name}`
           );
@@ -147,7 +181,7 @@ const createProject = (name, destination, options) => {
   });
 };
 
-const coreProcess = () => {
+const startProcess = () => {
   program
     .name("crf")
     .command("create")
@@ -182,7 +216,7 @@ const coreProcess = () => {
                 if (error) throw error;
 
                 console.log("\ncnpm安装完成");
-                createProject(name, destination, options);
+                createDirectory(name, destination, options);
               }
             );
           } else {
@@ -192,14 +226,14 @@ const coreProcess = () => {
                 .split("@")[1];
               console.log(chalk.yellow(`\n检测到系统当前cnpm版本为${version}`));
 
-              createProject(name, destination, options);
+              createDirectory(name, destination, options);
             } catch (err) {
               console.log(chalk.red(err));
             }
           }
         });
       } else {
-        createProject(name, destination, options);
+        createDirectory(name, destination, options);
       }
     });
 
@@ -210,4 +244,4 @@ const coreProcess = () => {
 
 checkNodeVersion();
 chekPkgVersion();
-coreProcess();
+startProcess();
