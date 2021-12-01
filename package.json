@@ -1,8 +1,10 @@
 {
   "name": "create-react-fast",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "keywords": [
-    "react"
+    "react",
+    "cli",
+    "create-react"
   ],
   "description": "Create React apps with no build configuration.",
   "repository": {
@@ -11,7 +13,7 @@
     "directory": "packages/create-react-app"
   },
   "bin": {
-    "crf": "./bin/index.js"
+    "crf": "index.js"
   },
   "scripts": {},
   "engines": {
@@ -20,7 +22,7 @@
   "license": "MIT",
   "files": [
     "index.js",
-    "createReactFast.js"
+    "bin"
   ],
   "dependencies": {
     "axios": "^0.24.0",
